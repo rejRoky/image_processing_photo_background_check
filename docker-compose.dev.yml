@@ -1,0 +1,64 @@
+# =============================================================================
+# Photo Background Check - Development Docker Compose
+# =============================================================================
+
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: photo_bg_check_dev
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - dev_media:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=photo_background_check.settings
+      - DJANGO_ENVIRONMENT=development
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/photo_background_check
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    container_name: photo_bg_check_dev_db
+    environment:
+      POSTGRES_DB: photo_background_check
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - dev_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: photo_bg_check_dev_redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: photo_bg_check_dev_celery
+    command: celery -A photo_background_check worker -l DEBUG
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=photo_background_check.settings
+      - DJANGO_ENVIRONMENT=development
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  dev_postgres_data:
+  dev_media:

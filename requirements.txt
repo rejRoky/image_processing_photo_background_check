@@ -1,0 +1,4 @@
+# Photo Background Check - Requirements
+# For production, use: pip install -r requirements/production.txt
+# For development, use: pip install -r requirements/development.txt
+-r requirements/production.txt
